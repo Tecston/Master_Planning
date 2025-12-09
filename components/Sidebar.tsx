@@ -1,4 +1,4 @@
-
+import logoImage from '../Imagenes/logo.png';
 import React from 'react';
 import { SiteConfig, ProjectStats } from '../types';
 import { Ruler, TreePine, Home, Map as MapIcon, RefreshCw, Save, FolderOpen, LayoutGrid, Layers, Settings2, Car, Trash2, FilePlus, Scale, X, LogOut } from 'lucide-react';
@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, stats, show
             {/* Header Section */}
             <div className="p-5 pb-2 shrink-0 flex items-center justify-between">
                 <div className="flex items-center gap-3 animate-enter-up">
-                    <img src="./Imagenes/logo.png" alt="AI Masterplan Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
+                    <img src={logoImage} alt="AI Masterplan Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
                     <div>
                         <h1 className="text-sm font-extrabold text-slate-900 leading-none tracking-tight">AI Masterplan</h1>
                     </div>
