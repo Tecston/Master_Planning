@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Map",
+  "description": "Real-time real estate feasibility and generative massing tool.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
