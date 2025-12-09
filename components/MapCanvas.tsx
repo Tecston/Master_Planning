@@ -32,7 +32,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{[key: string]: mapboxgl.Marker}>({});
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  
+  const [isFlatView, setIsFlatView] = useState(false); // 2D vs 3D
+
   // Para DRAW_ROAD (dos clics)
   const roadStartRef = useRef<LatLng | null>(null);
 
@@ -57,6 +58,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       map.resize();
       add3DBuildings(map);
       updateGeometryLayers();
+    });
+
+    // Listener para actualizar el estado 2D/3D según el pitch actual
+    map.on('pitch', () => {
+      const pitch = map.getPitch();
+      setIsFlatView(pitch < 5);
     });
 
     mapRef.current = map;
@@ -401,9 +408,41 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     });
   }, [points, activeTool, constraints, onInteractStart, setConstraints, setPoints]);
 
+  // --- Toggle 2D / 3D ---
+  const toggleView = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (isFlatView) {
+      // Cambiar a 3D (inclinado)
+      map.easeTo({
+        pitch: 45,
+        duration: 1000
+      });
+      setIsFlatView(false);
+    } else {
+      // Cambiar a 2D (plano y Norte arriba)
+      map.easeTo({
+        pitch: 0,
+        bearing: 0,
+        duration: 1000
+      });
+      setIsFlatView(true);
+    }
+  };
+
   return (
     <div className="relative w-full h-full transition-all duration-700 ease-in-out">
       <div ref={mapContainer} className="w-full h-full outline-none" />
+
+      {/* Botón toggle 2D/3D */}
+      <button 
+        onClick={toggleView}
+        className="absolute right-4 md:right-6 bottom-40 md:bottom-24 z-30 w-14 h-14 bg-white rounded-full shadow-xl shadow-slate-900/10 flex items-center justify-center text-slate-700 font-black text-xs hover:scale-110 active:scale-95 transition-all duration-300 border border-slate-100/50"
+        title={isFlatView ? 'Vista 3D' : 'Vista 2D (Norte)'}
+      >
+        {isFlatView ? '3D' : '2D'}
+      </button>
     </div>
   );
 };
