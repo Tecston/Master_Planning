@@ -440,6 +440,7 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sitePoints, setSitePoints] = useState<LatLng[]>([]);
   const [constraints, setConstraints] = useState<UserConstraint[]>([]);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   
   // Set initial tool to 'SELECT' (Move Mode) instead of 'DRAW_SITE'
   const [activeTool, setActiveTool] = useState<ToolMode>('SELECT');
@@ -466,7 +467,7 @@ const App: React.FC = () => {
 
   // Auto-hide Dock State
   const [isDockVisible, setIsDockVisible] = useState(true);
-  const dockTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // -- Confirmation Modal State --
   const [confirmationState, setConfirmationState] = useState<{
@@ -515,6 +516,35 @@ const App: React.FC = () => {
     dockTimerRef.current = setTimeout(() => {
         setIsDockVisible(false);
     }, 4000); // Hide after 4 seconds of inactivity
+  }, []);
+
+  // --- DEVICE DETECTION LOGIC ---
+  useEffect(() => {
+      const checkDevice = () => {
+          // 1. Screen Resolution Check
+          const width = window.innerWidth;
+          
+          // 2. User Agent Check (Strict)
+          const ua = navigator.userAgent.toLowerCase();
+          const isMobileUA = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(ua);
+          
+          // 3. Touch + Screen Size (Catches 'Desktop Mode' on Phones)
+          const isTouch = navigator.maxTouchPoints > 0;
+          // Most phones in desktop mode still report a screen.width that is small, 
+          // or their innerWidth might be around 980px but logical screen is small.
+          const isSmallScreen = window.screen.width < 1024 || width < 1024;
+
+          // Block if it matches explicit mobile UA OR if the screen is too small (including phones in desktop mode)
+          if (isMobileUA || isSmallScreen) {
+              setIsMobileDevice(true);
+          } else {
+              setIsMobileDevice(false);
+          }
+      };
+
+      checkDevice();
+      window.addEventListener('resize', checkDevice);
+      return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
   useEffect(() => {
@@ -880,6 +910,29 @@ const App: React.FC = () => {
   const handleAddRoad = (p1: LatLng, p2: LatLng) => { setCustomRoads([...customRoads, { p1, p2 }]); setActiveTool('SELECT'); };
 
   const isEditMode = ['DRAW_SITE', 'PLACE_PARK', 'DRAW_ROAD', 'EDIT_GEOMETRY'].includes(activeTool);
+
+  // If Mobile, Block Access
+  if (isMobileDevice) {
+      return (
+          <div className="h-screen w-screen bg-slate-50 flex items-center justify-center p-6 text-center font-sans">
+              <div className="max-w-md bg-white rounded-3xl shadow-2xl p-10 border border-slate-100 flex flex-col items-center">
+                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6 relative">
+                      <MonitorOff size={40} className="text-slate-400" strokeWidth={1.5} />
+                      <div className="absolute top-0 right-0 bg-rose-500 rounded-full p-1 border-2 border-white">
+                          <X size={12} className="text-white" strokeWidth={3} />
+                      </div>
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900 mb-3">Dispositivo no compatible</h1>
+                  <p className="text-sm font-medium text-slate-500 leading-relaxed mb-6">
+                      La plataforma <strong className="text-slate-800">AI Masterplan</strong> requiere una pantalla más grande y periféricos de precisión (mouse) para procesar y visualizar los planos maestros en 3D.
+                  </p>
+                  <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-xl text-xs font-bold border border-blue-100">
+                      Por favor, usa una PC, Laptop o Tablet.
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   if (!isLoggedIn) return <Login onLogin={() => setIsLoggedIn(true)} />;
 
